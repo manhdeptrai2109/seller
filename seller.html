@@ -8,12 +8,12 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="title-glow">TMANHIOS SELLER</h1>
+        <h1 class="title-glow" id="brand-title">TMANHIOS SELLER</h1>
         <p class="subtitle">Xin chào, <span id="username-display"></span> | <a href="#" id="btn-logout">Đăng xuất</a></p>
 
-        <!-- QUOTA -->
         <div class="quota-box">
             <h3>QUOTA HÔM NAY</h3>
+            <p>Prefix: <span id="my-prefix">TManhios-</span></p>
             <p>Đã dùng: <span id="quota-used">0</span> / <span id="quota-limit">100</span> key</p>
             <p>Còn lại: <span id="quota-remain">100</span> key</p>
             <div class="progress-bar">
@@ -21,7 +21,6 @@
             </div>
         </div>
 
-        <!-- TẠO KEY -->
         <div class="controls">
             <label>Loại hạn:</label>
             <select id="duration">
@@ -42,7 +41,6 @@
             <textarea id="result" readonly placeholder="Key sẽ hiện ở đây sau khi bạn bấm TẠO KEY..."></textarea>
         </div>
 
-        <!-- DANH SÁCH KEY -->
         <div class="controls" style="border-top:1px dashed #333; padding-top:15px;">
             <button id="btn-reload">TẢI LẠI KEY</button>
             <input type="text" id="search" placeholder="Tìm key...">
