@@ -1,5 +1,4 @@
 // Chú thích: seller.js - logic web seller
-// Gọi Worker endpoints /seller/*
 
 const API_BASE    = "https://tmanhios.pretty-pilot.workers.dev";
 const API_LOGIN   = API_BASE + "/seller/login";
@@ -8,19 +7,9 @@ const API_CREATE  = API_BASE + "/seller/create";
 const API_KEYS    = API_BASE + "/seller/keys";
 const API_DELETE  = API_BASE + "/seller/delete";
 
-const DURATION_LABEL = {
-    "1hour":  "1 GIỜ",
-    "1day":   "1 NGÀY",
-    "7day":   "7 NGÀY",
-    "1month": "1 THÁNG"
-};
-
 let currentUser = null;
 let totalKeys = 0;
 
-// ============================================================
-// Chú thích: kiểm tra session
-// ============================================================
 function checkAuth() {
     const user = localStorage.getItem("seller_user");
     const pass = localStorage.getItem("seller_pass");
@@ -34,14 +23,9 @@ function checkAuth() {
     return true;
 }
 
-// ============================================================
-// Chú thích: gọi API chung
-// ============================================================
 async function apiCall(url, params) {
     const form = new FormData();
-    for (const k in params) {
-        form.append(k, params[k]);
-    }
+    for (const k in params) form.append(k, params[k]);
     try {
         const r = await fetch(url, { method: "POST", body: form });
         return await r.json();
@@ -50,9 +34,6 @@ async function apiCall(url, params) {
     }
 }
 
-// ============================================================
-// Chú thích: XỬ LÝ LOGIN PAGE
-// ============================================================
 function initLoginPage() {
     const $btnLogin = document.getElementById("btn-login");
     const $user = document.getElementById("username");
@@ -61,11 +42,7 @@ function initLoginPage() {
 
     if (!$btnLogin) return;
 
-    // Chú thích: nếu đã login rồi thì vào luôn dashboard
-    if (checkAuth()) {
-        window.location.href = "seller.html";
-        return;
-    }
+    if (checkAuth()) { window.location.href = "seller.html"; return; }
 
     $btnLogin.addEventListener("click", async () => {
         const user = $user.value.trim().toLowerCase();
@@ -85,6 +62,8 @@ function initLoginPage() {
         if (j.status === "ok") {
             localStorage.setItem("seller_user", user);
             localStorage.setItem("seller_pass", password);
+            localStorage.setItem("seller_prefix", j.prefix || "TManhios-");
+            localStorage.setItem("seller_brand", j.brand || "TMANHIOS SELLER");
             $msg.textContent = "Đăng nhập thành công! Đang chuyển...";
             $msg.style.color = "#00ff7f";
             setTimeout(() => { window.location.href = "seller.html"; }, 500);
@@ -99,21 +78,26 @@ function initLoginPage() {
         }
     });
 
-    // Chú thích: enter để login
     $pass.addEventListener("keydown", (e) => {
         if (e.key === "Enter") $btnLogin.click();
     });
 }
 
-// ============================================================
-// Chú thích: XỬ LÝ DASHBOARD PAGE
-// ============================================================
 function initDashboardPage() {
     const $usernameDisplay = document.getElementById("username-display");
     if (!$usernameDisplay) return;
 
     if (!checkAuth()) return;
     $usernameDisplay.textContent = currentUser;
+
+    const myPrefix = localStorage.getItem("seller_prefix") || "TManhios-";
+    const $myPrefix = document.getElementById("my-prefix");
+    if ($myPrefix) $myPrefix.textContent = myPrefix;
+
+    const myBrand = localStorage.getItem("seller_brand") || "TMANHIOS SELLER";
+    const $brandTitle = document.getElementById("brand-title");
+    if ($brandTitle) $brandTitle.textContent = myBrand;
+    document.title = myBrand + " - Seller";
 
     const $duration   = document.getElementById("duration");
     const $btnCreate  = document.getElementById("btn-create");
@@ -126,7 +110,6 @@ function initDashboardPage() {
     const $keyBody    = document.getElementById("key-body");
     const $total      = document.getElementById("total");
 
-    // Chú thích: cập nhật quota
     async function refreshQuota() {
         const j = await apiCall(API_QUOTA, { username: currentUser });
         if (j.status !== "ok") {
@@ -149,7 +132,6 @@ function initDashboardPage() {
         else $fill.style.background = "#00ff7f";
     }
 
-    // Chú thích: tạo key
     $btnCreate.addEventListener("click", async () => {
         const dur = $duration.value;
         const oldText = $btnCreate.textContent;
@@ -160,11 +142,8 @@ function initDashboardPage() {
 
         if (j.status === "ok") {
             const oldTextArea = $result.value;
-            if (oldTextArea.trim() === "") {
-                $result.value = j.key;
-            } else {
-                $result.value = oldTextArea + "\n" + j.key;
-            }
+            if (oldTextArea.trim() === "") $result.value = j.key;
+            else $result.value = oldTextArea + "\n" + j.key;
             $msg.textContent = "Tạo key thành công!";
             $msg.style.color = "#00ff7f";
             totalKeys++;
@@ -186,7 +165,6 @@ function initDashboardPage() {
         $btnCreate.disabled = false;
     });
 
-    // Chú thích: copy
     $btnCopy.addEventListener("click", () => {
         if (!$result.value) return;
         navigator.clipboard.writeText($result.value).then(() => {
@@ -196,14 +174,12 @@ function initDashboardPage() {
         });
     });
 
-    // Chú thích: xóa textarea
     $btnClear.addEventListener("click", () => {
         $result.value = "";
         totalKeys = 0;
         $total.textContent = 0;
     });
 
-    // Chú thích: đếm ngược
     function formatRemain(item) {
         if (!item.activatedAt) return "CHƯA DÙNG";
         const dur = getDurationMs(item.key);
@@ -220,18 +196,18 @@ function initDashboardPage() {
     }
 
     function getDurationMs(key) {
-        if (key.startsWith("TManhios-1hour-"))  return 3600000;
-        if (key.startsWith("TManhios-1day-"))   return 86400000;
-        if (key.startsWith("TManhios-7day-"))   return 604800000;
-        if (key.startsWith("TManhios-1month-")) return 2592000000;
+        if (key.indexOf("-1hour-")  !== -1) return 3600000;
+        if (key.indexOf("-1day-")   !== -1) return 86400000;
+        if (key.indexOf("-7day-")   !== -1) return 604800000;
+        if (key.indexOf("-1month-") !== -1) return 2592000000;
         return 86400000;
     }
 
     function getDurationLabel(key) {
-        if (key.startsWith("TManhios-1hour-"))  return "1 GIỜ";
-        if (key.startsWith("TManhios-1day-"))   return "1 NGÀY";
-        if (key.startsWith("TManhios-7day-"))   return "7 NGÀY";
-        if (key.startsWith("TManhios-1month-")) return "1 THÁNG";
+        if (key.indexOf("-1hour-")  !== -1) return "1 GIỜ";
+        if (key.indexOf("-1day-")   !== -1) return "1 NGÀY";
+        if (key.indexOf("-7day-")   !== -1) return "7 NGÀY";
+        if (key.indexOf("-1month-") !== -1) return "1 THÁNG";
         return "N/A";
     }
 
@@ -239,19 +215,13 @@ function initDashboardPage() {
         return new Date(ts).toLocaleString("vi-VN");
     }
 
-    // Chú thích: load danh sách key
     async function loadKeys() {
         const j = await apiCall(API_KEYS, { username: currentUser });
-        if (j.status !== "ok") {
-            $keyBody.innerHTML = "";
-            return;
-        }
+        if (j.status !== "ok") { $keyBody.innerHTML = ""; return; }
 
         const filter = $search.value.toLowerCase();
         let keys = j.keys || [];
-        if (filter) {
-            keys = keys.filter(k => k.key.toLowerCase().includes(filter));
-        }
+        if (filter) keys = keys.filter(k => k.key.toLowerCase().includes(filter));
         keys.sort((a, b) => b.createdAt - a.createdAt);
 
         $keyBody.innerHTML = "";
@@ -280,13 +250,8 @@ function initDashboardPage() {
                 btnDel.textContent = "...";
                 btnDel.disabled = true;
                 const r = await apiCall(API_DELETE, { username: currentUser, key: item.key });
-                if (r.status === "ok") {
-                    loadKeys();
-                } else {
-                    alert("Lỗi xóa key");
-                    btnDel.textContent = "XÓA";
-                    btnDel.disabled = false;
-                }
+                if (r.status === "ok") loadKeys();
+                else { alert("Lỗi xóa key"); btnDel.textContent = "XÓA"; btnDel.disabled = false; }
             });
             tdAct.appendChild(btnDel);
 
@@ -298,27 +263,21 @@ function initDashboardPage() {
         $total.textContent = keys.length;
     }
 
-    // Chú thích: nút tải lại
     $btnReload.addEventListener("click", loadKeys);
     $search.addEventListener("input", loadKeys);
 
-    // Chú thích: đăng xuất
     document.getElementById("btn-logout").addEventListener("click", (e) => {
         e.preventDefault();
         localStorage.clear();
         window.location.href = "index.html";
     });
 
-    // Chú thích: khởi động
     refreshQuota();
     loadKeys();
     setInterval(refreshQuota, 30000);
     setInterval(loadKeys, 10000);
 }
 
-// ============================================================
-// Chú thích: chấm đỏ
-// ============================================================
 document.addEventListener("click", (e) => {
     const dot = document.createElement("div");
     dot.className = "click-dot";
@@ -328,8 +287,5 @@ document.addEventListener("click", (e) => {
     setTimeout(() => dot.remove(), 3000);
 });
 
-// ============================================================
-// Chú thích: khởi động
-// ============================================================
 initLoginPage();
 initDashboardPage();
