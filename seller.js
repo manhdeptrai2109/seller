@@ -10,6 +10,9 @@ const API_DELETE  = API_BASE + "/seller/delete";
 let currentUser = null;
 let totalKeys = 0;
 
+// ============================================================
+// Chú thích: kiểm tra session
+// ============================================================
 function checkAuth() {
     const user = localStorage.getItem("seller_user");
     const pass = localStorage.getItem("seller_pass");
@@ -34,6 +37,9 @@ async function apiCall(url, params) {
     }
 }
 
+// ============================================================
+// Chú thích: LOGIN PAGE
+// ============================================================
 function initLoginPage() {
     const $btnLogin = document.getElementById("btn-login");
     const $user = document.getElementById("username");
@@ -64,6 +70,7 @@ function initLoginPage() {
             localStorage.setItem("seller_pass", password);
             localStorage.setItem("seller_prefix", j.prefix || "TManhios-");
             localStorage.setItem("seller_brand", j.brand || "TMANHIOS SELLER");
+            localStorage.setItem("seller_expiredAt", j.expiredAt || "0");
             $msg.textContent = "Đăng nhập thành công! Đang chuyển...";
             $msg.style.color = "#00ff7f";
             setTimeout(() => { window.location.href = "seller.html"; }, 500);
@@ -71,7 +78,8 @@ function initLoginPage() {
             const errMap = {
                 "not_found": "Tài khoản không tồn tại",
                 "wrong_password": "Sai mật khẩu",
-                "disabled": "Tài khoản đã bị khóa"
+                "disabled": "Tài khoản đã bị khóa",
+                "rental_expired": "Đã hết hạn thuê — liên hệ admin"
             };
             $msg.textContent = errMap[j.msg] || ("Lỗi: " + j.msg);
             $msg.style.color = "#ff2b2b";
@@ -83,6 +91,9 @@ function initLoginPage() {
     });
 }
 
+// ============================================================
+// Chú thích: DASHBOARD PAGE
+// ============================================================
 function initDashboardPage() {
     const $usernameDisplay = document.getElementById("username-display");
     if (!$usernameDisplay) return;
@@ -94,10 +105,27 @@ function initDashboardPage() {
     const $myPrefix = document.getElementById("my-prefix");
     if ($myPrefix) $myPrefix.textContent = myPrefix;
 
+    // Chú thích: đổi tiêu đề theo brand
     const myBrand = localStorage.getItem("seller_brand") || "TMANHIOS SELLER";
     const $brandTitle = document.getElementById("brand-title");
     if ($brandTitle) $brandTitle.textContent = myBrand;
     document.title = myBrand + " - Seller";
+
+    // Chú thích: hiển thị hạn thuê
+    const expiredAt = parseInt(localStorage.getItem("seller_expiredAt") || "0");
+    const $rentalInfo = document.getElementById("rental-info");
+    if ($rentalInfo && expiredAt > 0) {
+        const remain = expiredAt - Date.now();
+        if (remain <= 0) {
+            $rentalInfo.textContent = "ĐÃ HẾT HẠN THUÊ";
+            $rentalInfo.style.color = "#ff2b2b";
+        } else {
+            const days = Math.floor(remain / 86400000);
+            const dateStr = new Date(expiredAt).toLocaleDateString("vi-VN");
+            $rentalInfo.textContent = `Hạn thuê: ${dateStr} (còn ${days} ngày)`;
+            $rentalInfo.style.color = days <= 7 ? "#ffcc00" : "#00ff7f";
+        }
+    }
 
     const $duration   = document.getElementById("duration");
     const $btnCreate  = document.getElementById("btn-create");
@@ -113,8 +141,8 @@ function initDashboardPage() {
     async function refreshQuota() {
         const j = await apiCall(API_QUOTA, { username: currentUser });
         if (j.status !== "ok") {
-            if (j.msg === "disabled") {
-                alert("Tài khoản đã bị khóa. Đăng xuất...");
+            if (j.msg === "disabled" || j.msg === "rental_expired" || j.msg === "not_found") {
+                alert("Tài khoản đã bị khóa hoặc hết hạn. Đăng xuất...");
                 localStorage.clear();
                 window.location.href = "index.html";
             }
@@ -130,6 +158,23 @@ function initDashboardPage() {
         if (pct >= 100) $fill.style.background = "#ff2b2b";
         else if (pct >= 80) $fill.style.background = "#ffcc00";
         else $fill.style.background = "#00ff7f";
+
+        // Chú thích: cập nhật hạn thuê nếu có
+        if (j.expiredAt) {
+            localStorage.setItem("seller_expiredAt", j.expiredAt);
+            const remain = j.expiredAt - Date.now();
+            if ($rentalInfo) {
+                if (remain <= 0) {
+                    $rentalInfo.textContent = "ĐÃ HẾT HẠN THUÊ";
+                    $rentalInfo.style.color = "#ff2b2b";
+                } else {
+                    const days = Math.floor(remain / 86400000);
+                    const dateStr = new Date(j.expiredAt).toLocaleDateString("vi-VN");
+                    $rentalInfo.textContent = `Hạn thuê: ${dateStr} (còn ${days} ngày)`;
+                    $rentalInfo.style.color = days <= 7 ? "#ffcc00" : "#00ff7f";
+                }
+            }
+        }
     }
 
     $btnCreate.addEventListener("click", async () => {
@@ -155,6 +200,9 @@ function initDashboardPage() {
             $msg.style.color = "#ff2b2b";
         } else if (j.msg === "disabled") {
             $msg.textContent = "Tài khoản đã bị khóa";
+            $msg.style.color = "#ff2b2b";
+        } else if (j.msg === "rental_expired") {
+            $msg.textContent = "Đã hết hạn thuê";
             $msg.style.color = "#ff2b2b";
         } else {
             $msg.textContent = "Lỗi: " + (j.msg || "unknown");
@@ -278,6 +326,9 @@ function initDashboardPage() {
     setInterval(loadKeys, 10000);
 }
 
+// ============================================================
+// Chú thích: hiệu ứng chấm đỏ
+// ============================================================
 document.addEventListener("click", (e) => {
     const dot = document.createElement("div");
     dot.className = "click-dot";
