@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - TManhios</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title-glow">TMANHIOS SELLER</h1>
+        <p class="subtitle">Xin chào, <span id="username-display"></span> | <a href="#" id="btn-logout">Đăng xuất</a></p>
+
+        <!-- QUOTA -->
+        <div class="quota-box">
+            <h3>QUOTA HÔM NAY</h3>
+            <p>Đã dùng: <span id="quota-used">0</span> / <span id="quota-limit">100</span> key</p>
+            <p>Còn lại: <span id="quota-remain">100</span> key</p>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- TẠO KEY -->
+        <div class="controls">
+            <label>Loại hạn:</label>
+            <select id="duration">
+                <option value="1hour">1 Giờ</option>
+                <option value="1day" selected>1 Ngày</option>
+                <option value="7day">7 Ngày</option>
+                <option value="1month">1 Tháng</option>
+            </select>
+
+            <button id="btn-create">TẠO KEY</button>
+            <button id="btn-copy">COPY</button>
+            <button id="btn-clear">XÓA</button>
+        </div>
+
+        <p id="msg"></p>
+
+        <div class="output">
+            <textarea id="result" readonly placeholder="Key sẽ hiện ở đây sau khi bạn bấm TẠO KEY..."></textarea>
+        </div>
+
+        <!-- DANH SÁCH KEY -->
+        <div class="controls" style="border-top:1px dashed #333; padding-top:15px;">
+            <button id="btn-reload">TẢI LẠI KEY</button>
+            <input type="text" id="search" placeholder="Tìm key...">
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>KEY</th>
+                        <th>LOẠI</th>
+                        <th>THỜI GIAN TẠO</th>
+                        <th>TRẠNG THÁI</th>
+                        <th>HÀNH ĐỘNG</th>
+                    </tr>
+                </thead>
+                <tbody id="key-body"></tbody>
+            </table>
+        </div>
+
+        <div class="counter">
+            Tổng: <span id="total">0</span> key
+        </div>
+    </div>
+
+    <script src="seller.js"></script>
+</body>
+</html>
